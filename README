@@ -1,0 +1,43 @@
+
+  Shortcore, a small url shortener service
+    (c) 2009 Florian Anderiasch, <fa at art dash core dot org>
+    BSD-licenced
+
+
+Requirements
+~~~~~~~~~~~~
+* a reasonably recent installation of PHP5, probably 5.2.0+
+* PDO with sqlite enabled
+
+
+Installation
+~~~~~~~~~~~~
+* git checkout
+* put into its own VirtualHost
+* edit .htaccess (or rewrite for lighty)
+* edit shortcore.config.php with sensible values
+* use the shortcore.db or create your own:
+
+CREATE TABLE shortcore (id TEXT, url TEXT, title TEXT, counter INT, created INT, PRIMARY KEY(id));
+INSERT INTO shortcore VALUES ("self", "http://example.org", "My example", 0, 1246465921);
+
+* possibly put shortcore.db out of docroot
+* make absolutely sure your webserver user has write access to the *directory* with shortcore.db in it.
+
+Usage
+~~~~~
+* browse to cfg['home'] /shortcore.php?help and check the bookmarklet
+* find an interesting site
+* click the bookmarklet
+ a) insert an id
+ b) don't insert an id
+* hit enter or press ok
+* it's getting saved and you're redirected
+
+the urls are of the form:
+
+http://example.org/_<id>
+
+if you want to preview, use:
+
+http://example.org/_<id>_
