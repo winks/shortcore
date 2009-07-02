@@ -1,0 +1,4 @@
+RewriteEngine on
+
+RewriteRule ^db(.*)$ /
+RewriteRule ^_(.*)$ /shortcore.php?id=$1 [L]
