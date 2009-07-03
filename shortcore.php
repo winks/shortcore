@@ -58,14 +58,26 @@ class Shortcore {
         $this->handle();
     }
 
+    function exec($sql, $array) {
+        try {
+            $q = $this->db->prepare($sql, array(PDO::ATTR_CURSOR => PDO::CURSOR_FWDONLY));
+            $q->execute($array);
+        } catch (Exception $e) {
+            $q = false;
+        }
+        return $q;
+    }
+
+
     /**
      * Grabs a result from the database
      * @param string $id the desired id
      * @return mixed
      */
     function getResult($id) {
-        $sql_select = sprintf('SELECT * FROM %s WHERE id="%s"', $this->cfg['table'], $id);
-        $q = $this->db->query($sql_select);
+        $sql_select = sprintf('SELECT * FROM %s WHERE id=:id', $this->cfg['table']);
+        $q = $this->exec($sql_select, array(':id' => $id));
+
         if ($q === false) {
             $result = false;
         } else {
@@ -85,21 +97,20 @@ class Shortcore {
             $id = substr($id, 0, -1);
         }
         $result = $this->getResult($id);
-        if (is_null($result) || false === $result) {
+        if (false === $result) {
             $this->page();
         } else {
             $counter = intval($result['counter']) + 1;
-            $sql_update  = sprintf('UPDATE %s SET counter="%s" WHERE id="%s";', $this->cfg['table'], $counter, $id);
-            $p = $this->db->query($sql_update);
-                if ($this->DEBUG) var_dump($p);
-                if ($this->DEBUG) var_dump($this->db->errorInfo());
+            $sql_update  = sprintf('UPDATE %s SET counter="%s" WHERE id=:id;', $this->cfg['table'], $counter);
+            $p = $this->exec($sql_update, array(':id' => $id));
+
             if ($preview) {
                 $link1 = sprintf('<a href="%s_%s">%s_%s</a>', $this->cfg['home'], $id, $this->cfg['home'], $id);
                 $link2 = sprintf('<a href="%s">%s</a>', $result['url'], $result['url']);
                 $text = sprintf('The link you clicked on, <em>%s</em>, is a redirect to <strong>%s</strong>,<br />'.
                                 ' was shortened on <em>%s</em> and has been clicked %s times.', 
-                    $link1, $link2, date('d.m.Y H:i',$result['created']), $counter);
-                echo sprintf($this->cfg['tpl_body'],$text);
+                                $link1, $link2, date('d.m.Y H:i', $result['created']), $counter);
+                echo sprintf($this->cfg['tpl_body'], $text);
             } else {
                 $this->page($result['url']);
             }
@@ -138,10 +149,9 @@ class Shortcore {
         if (is_null($title)) {
             $title = 'untitled';
         }
-        $sql_insert = sprintf('INSERT INTO %s VALUES("%s", "%s", "%s", 0, "%s");', 
-                                $this->cfg['table'], $id, $url, $title, $time);
-            if ($this->DEBUG) print_r($sql_insert);
-        $this->db->query($sql_insert);
+        $sql_insert = sprintf('INSERT INTO %s VALUES(:id, :url, :title, 0, "%s");', 
+                                $this->cfg['table'], $time);
+        $this->exec($sql_insert, array(':id' => $id, ':url' => $url, ':title' => $title));
         $this->page($cfg['home'].'_'.$id.'_');
     }
 
@@ -187,13 +197,13 @@ class Shortcore {
 
         // writing
         if (!is_null($_url)) {
-            $this->_e('adding');
+            $this->_e('adding:'.$_id);
             $this->add($_id, $_url, $_title);
         // reading
         } else {
             // this is "/_<id>"
             if (!is_null($_id)) {
-                $this->_e('redir');
+                $this->_e('redir:'.$_id);
                 $this->redirect($_id);
             }
         }
